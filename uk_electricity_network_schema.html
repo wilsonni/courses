@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>UK Electricity Distribution Network Database Schema</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 0 20px;
+    color: #24292e;
+    font-size: 14px;
+}
+h1 { font-size: 28px; border-bottom: 2px solid #e1e4e8; padding-bottom: 10px; margin-top: 40px; }
+h2 { font-size: 22px; border-bottom: 1px solid #e1e4e8; padding-bottom: 8px; margin-top: 36px; }
+h3 { font-size: 18px; margin-top: 28px; }
+h4 { font-size: 15px; margin-top: 24px; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 13px;
+}
+th, td {
+    border: 1px solid #d0d7de;
+    padding: 8px 12px;
+    text-align: left;
+}
+th {
+    background-color: #f6f8fa;
+    font-weight: 600;
+}
+tr:nth-child(even) { background-color: #f9fafb; }
+code {
+    background-color: #f6f8fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+    font-family: SFMono-Regular, Consolas, monospace;
+}
+pre {
+    background-color: #f6f8fa;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.45;
+    border: 1px solid #d0d7de;
+}
+pre code {
+    background: none;
+    padding: 0;
+}
+blockquote {
+    border-left: 4px solid #dfe2e5;
+    margin: 0;
+    padding: 0 16px;
+    color: #6a737d;
+}
+hr { border: none; border-top: 1px solid #e1e4e8; margin: 30px 0; }
+</style>
+</head>
+<body>
+<h1 id="uk-electricity-distribution-network-database-schema">UK Electricity Distribution Network Database Schema</h1>
+<h2 id="proof-of-concept-uk-power-networks-ukpn">Proof-of-Concept: UK Power Networks (UKPN)</h2>
+<hr />
+<h2 id="1-dno-selection-uk-power-networks">1. DNO Selection: UK Power Networks</h2>
+<p><strong>UK Power Networks (UKPN)</strong> is the recommended DNO for the proof-of-concept, selected for these reasons:</p>
+<table>
+<thead>
+<tr>
+<th>Criterion</th>
+<th>UKPN</th>
+<th>Nearest competitor (NGED)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Customers</td>
+<td>~8.3 million connections</td>
+<td>~8 million</td>
+</tr>
+<tr>
+<td>Population served</td>
+<td>~19 million (29% of UK)</td>
+<td>~7.8 million</td>
+</tr>
+<tr>
+<td>Licence areas</td>
+<td>3 (London, South East, East of England)</td>
+<td>4 (Midlands, South West, South Wales)</td>
+</tr>
+<tr>
+<td>Open data platform</td>
+<td>OpenDataSoft (thousands of datasets, REST API, CSV/GeoJSON/SHP)</td>
+<td>Connected Data Portal (more limited)</td>
+</tr>
+<tr>
+<td>LTDS format</td>
+<td>Structured queryable tables</td>
+<td>Primarily PDF</td>
+</tr>
+<tr>
+<td>Smart meter data</td>
+<td>Half-hourly at LV feeder and substation level</td>
+<td>Emerging</td>
+</tr>
+<tr>
+<td>Secondary substation coverage</td>
+<td>Full (sites, transformers, utilisation, distribution areas)</td>
+<td>Limited</td>
+</tr>
+</tbody>
+</table>
+<p>UKPN is the clear choice because it has the <strong>most comprehensive, machine-readable open data</strong> of any UK DNO, covering the full network hierarchy from Grid Supply Points down to LV feeders.</p>
+<hr />
+<h2 id="2-datasets-to-ingest">2. Datasets to Ingest</h2>
+<h3 id="21-network-hierarchy-datasets">2.1 Network Hierarchy Datasets</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dataset</th>
+<th>UKPN Dataset ID</th>
+<th>Key Content</th>
+<th>Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D1</td>
+<td><strong>Grid Supply Points Overview</strong></td>
+<td><code>ukpn-grid-supply-points-overview</code></td>
+<td>GSP names, technical limits, seasonal import/export limits, capacity utilisation</td>
+<td>CSV, API</td>
+</tr>
+<tr>
+<td>D2</td>
+<td><strong>GSP Distribution Areas</strong></td>
+<td><code>ukpn-grid-supply-points</code></td>
+<td>Geospatial polygons defining each GSP's supply area</td>
+<td>GeoJSON, SHP</td>
+</tr>
+<tr>
+<td>D3</td>
+<td><strong>Primary Substation Distribution Areas</strong></td>
+<td><code>ukpn_primary_postcode_area</code></td>
+<td>Primary substation names, firm capacity, % unutilised, supply area polygons</td>
+<td>GeoJSON, CSV</td>
+</tr>
+<tr>
+<td>D4</td>
+<td><strong>Secondary Sites</strong></td>
+<td><code>ukpn-secondary-sites</code></td>
+<td>All secondary substations: name, location, transformer rating (kVA), customer count, parent primary feeder</td>
+<td>CSV, API</td>
+</tr>
+<tr>
+<td>D5</td>
+<td><strong>Secondary Site Transformers</strong></td>
+<td><code>ukpn-secondary-site-transformers</code></td>
+<td>Transformer ratings, voltage, connectivity for each secondary site</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>D6</td>
+<td><strong>Secondary Substation Distribution Areas</strong></td>
+<td><code>ukpn_secondary_postcode_area</code></td>
+<td>Voronoi-based supply area polygons for each secondary substation</td>
+<td>GeoJSON, SHP</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-transformer-technical-datasets">2.2 Transformer &amp; Technical Datasets</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dataset</th>
+<th>UKPN Dataset ID</th>
+<th>Key Content</th>
+<th>Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D7</td>
+<td><strong>LTDS Table 2a -- Transformer Data</strong></td>
+<td><code>ltds-table-2a</code></td>
+<td>Two-winding transformer ratings, impedances at Grid and Primary substations</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>D8</td>
+<td><strong>LTDS Table 4 -- Fault Levels</strong></td>
+<td>(part of LTDS)</td>
+<td>Fault level data at each substation</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>D9</td>
+<td><strong>Earth Potential Rise Data</strong></td>
+<td><code>grid-and-primary-sites-epr-data</code></td>
+<td>Fault current, ground return current, EPR classification</td>
+<td>CSV</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-demand-supply-current-historical">2.3 Demand &amp; Supply (Current / Historical)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dataset</th>
+<th>UKPN Dataset ID</th>
+<th>Key Content</th>
+<th>Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D10</td>
+<td><strong>LTDS Table 3a -- Observed Peak Demand</strong></td>
+<td><code>ltds-table-3a-load-data-observed</code></td>
+<td>Observed MW peak demand at each Grid and Primary substation (uncorrected)</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>D11</td>
+<td><strong>LTDS Table 3b -- True Peak Demand</strong></td>
+<td>(part of LTDS)</td>
+<td>Corrected MW peak demand (adds back demand served by embedded generation)</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>D12</td>
+<td><strong>Grid Transformer Power Flow</strong></td>
+<td><code>ukpn-grid-transformer-operational-data-half-hourly</code></td>
+<td>Half-hourly time series: voltage, current, active power (MW), reactive power (MVAr) at each SGT</td>
+<td>CSV, API</td>
+</tr>
+<tr>
+<td>D13</td>
+<td><strong>Smart Meter Consumption -- Substation</strong></td>
+<td><code>ukpn-smart-meter-consumption-substation</code></td>
+<td>Half-hourly aggregated import kWh at each secondary substation</td>
+<td>CSV, API</td>
+</tr>
+<tr>
+<td>D14</td>
+<td><strong>Smart Meter Consumption -- LV Feeder</strong></td>
+<td><code>ukpn-smart-meter-consumption-lv-feeder</code></td>
+<td>Half-hourly aggregated import kWh at each LV feeder</td>
+<td>CSV, API</td>
+</tr>
+<tr>
+<td>D15</td>
+<td><strong>Secondary Site Utilisation</strong></td>
+<td><code>ukpn-secondary-site-utilisation</code></td>
+<td>Annual % utilisation of each secondary substation</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>D16</td>
+<td><strong>Standard Load Profiles</strong></td>
+<td><code>ukpn-standard-profiles-electricity-demand</code></td>
+<td>Yearly load profiles by customer type (domestic, commercial, industrial, EV, data centre)</td>
+<td>CSV</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24-embedded-generation-connected-capacity-current-supply">2.4 Embedded Generation &amp; Connected Capacity (Current Supply)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dataset</th>
+<th>UKPN Dataset ID</th>
+<th>Key Content</th>
+<th>Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D17</td>
+<td><strong>Embedded Capacity Register</strong></td>
+<td><code>ukpn-embedded-capacity-register</code></td>
+<td>All DER sites &gt;= 1MW: location, energy source, export capacity (MW), connection status, parent primary substation</td>
+<td>CSV, API</td>
+</tr>
+<tr>
+<td>D18</td>
+<td><strong>Large Demand List</strong></td>
+<td><code>ukpn-large-demand-list</code></td>
+<td>Committed import projects &gt;= 5,000 kVA (anonymised)</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>D19</td>
+<td><strong>GSP Project Status Breakdown</strong></td>
+<td><code>ukpn-gsp-project-status</code></td>
+<td>Connection projects in queue at each GSP by status</td>
+<td>CSV</td>
+</tr>
+</tbody>
+</table>
+<h3 id="25-forecast-demand-supply">2.5 Forecast Demand &amp; Supply</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dataset</th>
+<th>UKPN Dataset ID</th>
+<th>Key Content</th>
+<th>Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D20</td>
+<td><strong>DFES Network Scenario Headroom Report</strong></td>
+<td><code>dfes-network-headroom-report</code></td>
+<td>Demand and generation headroom (MW) at BSP and Primary level, projected to 2050 under multiple scenarios</td>
+<td>CSV, API</td>
+</tr>
+<tr>
+<td>D21</td>
+<td><strong>LTDS Infrastructure Projects</strong></td>
+<td><code>ukpn-ltds-infrastructure-projects</code></td>
+<td>Planned reinforcement projects: location, timescale, capacity increase</td>
+<td>CSV</td>
+</tr>
+</tbody>
+</table>
+<h3 id="26-operational-supplementary">2.6 Operational &amp; Supplementary</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dataset</th>
+<th>UKPN Dataset ID</th>
+<th>Key Content</th>
+<th>Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D22</td>
+<td><strong>Live Faults</strong></td>
+<td><code>ukpn-live-faults</code></td>
+<td>Near real-time power cut data (planned and unplanned outages)</td>
+<td>CSV, API</td>
+</tr>
+<tr>
+<td>D23</td>
+<td><strong>Network Statistics</strong></td>
+<td><code>ukpn-network-statistics</code></td>
+<td>High-level statistics per licence area from RIGs submissions</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>D24</td>
+<td><strong>Data Centre Utilisation</strong></td>
+<td><code>ukpn-data-centre-utilisation</code></td>
+<td>Maximum observed utilisations from operational data centres</td>
+<td>CSV</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-network-hierarchy">3. Network Hierarchy</h2>
+<p>The UK distribution network follows this tree structure:</p>
+<pre class="codehilite"><code>TRANSMISSION (National Grid)           400kV / 275kV
+       |
+  [GRID SUPPLY POINT (GSP)]           400/275kV --&gt; 132kV
+       |                               Supergrid Transformers (SGTs)
+       |
+  [BULK SUPPLY POINT (BSP)]           132kV --&gt; 33kV (or 66kV)
+       |                               Extra High Voltage (EHV)
+       |
+  [PRIMARY SUBSTATION]                 33kV --&gt; 11kV (or 6.6kV)
+       |                               High Voltage (HV)
+       |
+  [SECONDARY SUBSTATION]              11kV --&gt; 400V/230V
+       |                               Low Voltage (LV)
+       |
+  [LV FEEDER]                         Underground cable / overhead line
+       |
+  [SERVICE CONNECTION / MPAN]          Customer meter point
+</code></pre>
+
+<p><strong>Key relationships:</strong>
+- 1 GSP feeds many BSPs
+- 1 BSP feeds many Primary Substations
+- 1 Primary Substation feeds many Secondary Substations
+- 1 Secondary Substation feeds many LV Feeders
+- 1 LV Feeder serves many customer MPANs</p>
+<p><strong>Primary key across all datasets:</strong> <code>Functional Location Code (FLOC)</code> -- a unique identifier assigned to every asset by UKPN.</p>
+<hr />
+<h2 id="4-database-schema-design">4. Database Schema Design</h2>
+<h3 id="41-entity-relationship-overview">4.1 Entity-Relationship Overview</h3>
+<pre class="codehilite"><code> +------------------+       +------------------+       +---------------------+
+ |  licence_area    |       |  grid_supply_    |       |  bulk_supply_       |
+ |                  |&lt;------+  point (GSP)     |&lt;------+  point (BSP)        |
+ |  licence_area_id |  1:N  |  gsp_id (FLOC)   |  1:N  |  bsp_id (FLOC)      |
+ +------------------+       +------------------+       +---------------------+
+                                                               |
+                                                           1:N |
+                                                               v
+ +---------------------+       +------------------+       +---------------------+
+ |  embedded_capacity   |  N:1  |  primary_        |       |  secondary_         |
+ |  register            |------&gt;|  substation      |&lt;------+  substation          |
+ |  ecr_id              |       |  primary_id(FLOC)|  1:N  |  secondary_id(FLOC) |
+ +---------------------+       +------------------+       +---------------------+
+                                       |                          |
+                                       |                      1:N |
+                                       |                          v
+                                       |                  +---------------------+
+                                       |                  |  lv_feeder          |
+                                       |                  |  feeder_id          |
+                                       |                  +---------------------+
+                                       |
+               +-----------------------+-----------------------+
+               |                       |                       |
+               v                       v                       v
+  +-------------------+  +------------------------+  +------------------------+
+  | transformer       |  | demand_observation     |  | dfes_forecast          |
+  | transformer_id    |  | observation_id         |  | forecast_id            |
+  | substation_floc   |  | substation_floc        |  | substation_floc        |
+  +-------------------+  +------------------------+  +------------------------+
+</code></pre>
+
+<h3 id="42-table-definitions">4.2 Table Definitions</h3>
+<h4 id="reference-dimension-tables">Reference / Dimension Tables</h4>
+<pre class="codehilite"><code class="language-sql">-- ============================================================
+-- LICENCE AREAS (UKPN operates 3; extensible for other DNOs)
+-- ============================================================
+CREATE TABLE licence_area (
+    licence_area_id   VARCHAR(10)  PRIMARY KEY,   -- e.g. 'EPN', 'LPN', 'SPN'
+    dno_name          VARCHAR(100) NOT NULL,       -- e.g. 'UK Power Networks'
+    licence_area_name VARCHAR(200) NOT NULL,       -- e.g. 'Eastern Power Networks'
+    region_desc       TEXT
+);
+
+-- Source: Manually populated from UKPN licence structure.
+-- Extensibility: Add rows for NGED, NPg, ENW, SSEN, SPEN when onboarding new DNOs.
+
+
+-- ============================================================
+-- GRID SUPPLY POINTS (GSPs)
+-- ============================================================
+-- Sources: D1 (GSP Overview), D2 (GSP Distribution Areas), D12 (Grid Transformer Power Flow)
+CREATE TABLE grid_supply_point (
+    gsp_floc               VARCHAR(50)   PRIMARY KEY,
+    gsp_name               VARCHAR(200)  NOT NULL,
+    licence_area_id        VARCHAR(10)   REFERENCES licence_area(licence_area_id),
+
+    -- Technical limits (from D1)
+    winter_import_limit_mw DECIMAL(10,2),          -- MW
+    summer_import_limit_mw DECIMAL(10,2),
+    asset_import_limit_mw  DECIMAL(10,2),
+    asset_export_limit_mw  DECIMAL(10,2),
+    historical_max_mw      DECIMAL(10,2),
+    historical_min_mw      DECIMAL(10,2),
+    import_utilisation_pct DECIMAL(5,2),            -- %
+    export_utilisation_pct DECIMAL(5,2),
+
+    -- Geospatial (from D2)
+    boundary_geojson       JSONB,                   -- GeoJSON polygon
+    latitude               DECIMAL(9,6),
+    longitude              DECIMAL(9,6),
+
+    updated_at             TIMESTAMP DEFAULT NOW()
+);
+
+
+-- ============================================================
+-- BULK SUPPLY POINTS (BSPs)
+-- ============================================================
+-- Sources: D20 (DFES Headroom -- reports at BSP level), LTDS network diagrams
+CREATE TABLE bulk_supply_point (
+    bsp_floc               VARCHAR(50)   PRIMARY KEY,
+    bsp_name               VARCHAR(200)  NOT NULL,
+    gsp_floc               VARCHAR(50)   REFERENCES grid_supply_point(gsp_floc),
+    licence_area_id        VARCHAR(10)   REFERENCES licence_area(licence_area_id),
+
+    voltage_kv             DECIMAL(6,1),            -- e.g. 132, 66, 33
+    firm_capacity_mw       DECIMAL(10,2),
+
+    latitude               DECIMAL(9,6),
+    longitude              DECIMAL(9,6),
+
+    updated_at             TIMESTAMP DEFAULT NOW()
+);
+
+
+-- ============================================================
+-- PRIMARY SUBSTATIONS
+-- ============================================================
+-- Sources: D3 (Primary Distribution Areas), D7 (LTDS Table 2a), D10/D11 (LTDS Table 3a/3b)
+CREATE TABLE primary_substation (
+    primary_floc           VARCHAR(50)   PRIMARY KEY,
+    primary_name           VARCHAR(200)  NOT NULL,
+    bsp_floc               VARCHAR(50)   REFERENCES bulk_supply_point(bsp_floc),
+    licence_area_id        VARCHAR(10)   REFERENCES licence_area(licence_area_id),
+
+    -- Capacity (from D3)
+    firm_capacity_mw       DECIMAL(10,2),
+    season_of_constraint   VARCHAR(20),             -- 'Winter' or 'Summer'
+    unutilised_capacity_pct DECIMAL(5,2),
+
+    -- Location (from D3)
+    boundary_geojson       JSONB,                   -- GeoJSON polygon (distribution area)
+    latitude               DECIMAL(9,6),
+    longitude              DECIMAL(9,6),
+
+    updated_at             TIMESTAMP DEFAULT NOW()
+);
+
+
+-- ============================================================
+-- SECONDARY SUBSTATIONS
+-- ============================================================
+-- Sources: D4 (Secondary Sites), D5 (Secondary Site Transformers),
+--          D6 (Secondary Distribution Areas), D15 (Utilisation)
+CREATE TABLE secondary_substation (
+    secondary_floc         VARCHAR(50)   PRIMARY KEY,
+    secondary_name         VARCHAR(200),
+    alias                  VARCHAR(200),
+    address                TEXT,
+    primary_floc           VARCHAR(50)   REFERENCES primary_substation(primary_floc),
+    licence_area_id        VARCHAR(10)   REFERENCES licence_area(licence_area_id),
+
+    -- Technical (from D4, D5)
+    onan_rating_kva        DECIMAL(10,2),           -- Transformer ONAN rating
+    voltage_kv             DECIMAL(6,2),            -- e.g. 11.0
+    indoor_outdoor         VARCHAR(10),             -- 'Indoor' or 'Outdoor'
+    customer_count         INTEGER,                 -- Redacted if &lt;= 5
+
+    -- Utilisation (from D15)
+    annual_utilisation_pct DECIMAL(5,2),
+    utilisation_method     VARCHAR(50),             -- 'Monitored' or 'Estimated'
+
+    -- Location (from D4, D6)
+    boundary_geojson       JSONB,
+    latitude               DECIMAL(9,6),
+    longitude              DECIMAL(9,6),
+    grid_ref               VARCHAR(20),
+
+    updated_at             TIMESTAMP DEFAULT NOW()
+);
+
+
+-- ============================================================
+-- LV FEEDERS
+-- ============================================================
+-- Sources: D14 (Smart Meter Consumption -- LV Feeder)
+CREATE TABLE lv_feeder (
+    feeder_id              VARCHAR(100)  PRIMARY KEY,  -- Composite or UKPN feeder reference
+    secondary_floc         VARCHAR(50)   REFERENCES secondary_substation(secondary_floc),
+    licence_area_id        VARCHAR(10)   REFERENCES licence_area(licence_area_id),
+
+    feeder_name            VARCHAR(200),
+    phase_count            INTEGER,                    -- Typically 3
+
+    updated_at             TIMESTAMP DEFAULT NOW()
+);
+</code></pre>
+
+<h4 id="transformer-detail-table">Transformer Detail Table</h4>
+<pre class="codehilite"><code class="language-sql">-- ============================================================
+-- TRANSFORMERS (Grid, Primary, and Secondary level)
+-- ============================================================
+-- Sources: D7 (LTDS Table 2a), D5 (Secondary Site Transformers), D9 (EPR Data)
+CREATE TABLE transformer (
+    transformer_id         SERIAL        PRIMARY KEY,
+    substation_floc        VARCHAR(50)   NOT NULL,     -- FK to any substation level
+    substation_level       VARCHAR(20)   NOT NULL,     -- 'GSP', 'BSP', 'Primary', 'Secondary'
+
+    -- Ratings (from D7, D5)
+    rating_mva             DECIMAL(10,2),
+    onan_rating_kva        DECIMAL(10,2),              -- For secondary transformers
+    hv_voltage_kv          DECIMAL(6,1),
+    lv_voltage_kv          DECIMAL(6,1),
+    impedance_pct          DECIMAL(6,3),
+
+    -- Fault level (from D8)
+    fault_level_ka         DECIMAL(10,2),
+
+    -- EPR (from D9)
+    epr_classification     VARCHAR(20),
+    ground_return_current_a DECIMAL(10,2),
+
+    winding_type           VARCHAR(20),               -- 'Two-winding', 'Three-winding'
+
+    updated_at             TIMESTAMP DEFAULT NOW()
+);
+</code></pre>
+
+<h4 id="time-series-observation-tables">Time-Series / Observation Tables</h4>
+<pre class="codehilite"><code class="language-sql">-- ============================================================
+-- DEMAND OBSERVATIONS (current/historical usage at all levels)
+-- ============================================================
+-- Sources: D10 (LTDS 3a -- annual peak), D11 (LTDS 3b -- true peak),
+--          D12 (Grid Transformer half-hourly), D13 (Smart Meter substation half-hourly),
+--          D14 (Smart Meter LV feeder half-hourly)
+CREATE TABLE demand_observation (
+    observation_id         BIGSERIAL     PRIMARY KEY,
+    substation_floc        VARCHAR(50)   NOT NULL,     -- FK to GSP, Primary, or Secondary
+    feeder_id              VARCHAR(100),               -- FK to lv_feeder (NULL if substation-level)
+    observation_level      VARCHAR(20)   NOT NULL,     -- 'GSP', 'Primary', 'Secondary', 'LV_Feeder'
+
+    -- Time
+    observation_timestamp  TIMESTAMP     NOT NULL,     -- Half-hourly for D12/D13/D14; annual date for D10/D11
+    granularity            VARCHAR(20)   NOT NULL,     -- 'Half_Hourly', 'Annual_Peak'
+
+    -- Demand values
+    active_power_mw        DECIMAL(12,4),              -- MW (or kW for LV)
+    reactive_power_mvar    DECIMAL(12,4),              -- MVAr
+    active_energy_kwh      DECIMAL(14,4),              -- kWh (from smart meter datasets)
+    reactive_energy_kvarh  DECIMAL(14,4),
+    voltage_kv             DECIMAL(8,3),
+    current_a              DECIMAL(10,2),
+
+    -- Peak demand specifics (from D10, D11)
+    is_observed_peak       BOOLEAN DEFAULT FALSE,      -- From LTDS Table 3a
+    is_true_peak           BOOLEAN DEFAULT FALSE,      -- From LTDS Table 3b (corrected)
+    peak_season            VARCHAR(10),                -- 'Winter', 'Summer'
+
+    -- Metadata
+    smart_meter_count      INTEGER,                    -- Number of meters in aggregation
+    data_source            VARCHAR(50),                -- Dataset ID reference
+
+    created_at             TIMESTAMP DEFAULT NOW()
+);
+
+-- Partition by time for performance
+-- CREATE TABLE demand_observation_2024 PARTITION OF demand_observation
+--     FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
+
+
+-- ============================================================
+-- SUPPLY OBSERVATIONS (current embedded generation output)
+-- ============================================================
+-- Sources: Derived from D12 (net power flow at GSP), D17 (connected capacity as baseline)
+-- Note: UKPN does not publish generation output time series directly;
+-- net flow at GSPs can be used to infer embedded generation contribution.
+CREATE TABLE supply_observation (
+    observation_id         BIGSERIAL     PRIMARY KEY,
+    substation_floc        VARCHAR(50)   NOT NULL,
+    observation_level      VARCHAR(20)   NOT NULL,     -- 'GSP', 'Primary'
+
+    observation_timestamp  TIMESTAMP     NOT NULL,
+    granularity            VARCHAR(20)   NOT NULL,
+
+    -- Supply values
+    net_export_mw          DECIMAL(12,4),              -- Negative = net import, Positive = net export
+    generation_estimate_mw DECIMAL(12,4),              -- Estimated from net flow + demand
+    embedded_capacity_mw   DECIMAL(12,4),              -- Total connected capacity at this node
+
+    data_source            VARCHAR(50),
+    created_at             TIMESTAMP DEFAULT NOW()
+);
+</code></pre>
+
+<h4 id="embedded-capacity-generation-register">Embedded Capacity / Generation Register</h4>
+<pre class="codehilite"><code class="language-sql">-- ============================================================
+-- EMBEDDED CAPACITY REGISTER (connected and queued generation)
+-- ============================================================
+-- Sources: D17 (Embedded Capacity Register), D18 (Large Demand List), D19 (GSP Project Status)
+CREATE TABLE embedded_capacity_register (
+    ecr_id                 SERIAL        PRIMARY KEY,
+    site_name              VARCHAR(200),
+    primary_floc           VARCHAR(50)   REFERENCES primary_substation(primary_floc),
+    gsp_floc               VARCHAR(50)   REFERENCES grid_supply_point(gsp_floc),
+    licence_area_id        VARCHAR(10)   REFERENCES licence_area(licence_area_id),
+
+    -- Location
+    postcode               VARCHAR(10),
+    grid_reference         VARCHAR(20),
+    latitude               DECIMAL(9,6),
+    longitude              DECIMAL(9,6),
+
+    -- Technical
+    energy_source          VARCHAR(100),              -- 'Solar', 'Wind', 'Gas', 'Battery Storage', etc.
+    technology_type        VARCHAR(100),              -- 'Photovoltaic', 'Onshore Wind', 'CCGT', 'Li-ion', etc.
+    export_capacity_mw     DECIMAL(10,3),
+    import_capacity_mw     DECIMAL(10,3),             -- For storage / demand sites
+    connection_voltage_kv  DECIMAL(6,1),
+
+    -- Status
+    connection_status      VARCHAR(50),               -- 'Connected', 'Accepted', 'In Queue', 'Energised'
+    flexible_connection    BOOLEAN,
+    connection_date        DATE,
+
+    updated_at             TIMESTAMP DEFAULT NOW()
+);
+
+
+-- ============================================================
+-- CONNECTION QUEUE (projects awaiting connection)
+-- ============================================================
+-- Sources: D18 (Large Demand List), D19 (GSP Project Status)
+CREATE TABLE connection_queue (
+    project_id             SERIAL        PRIMARY KEY,
+    gsp_floc               VARCHAR(50)   REFERENCES grid_supply_point(gsp_floc),
+    primary_floc           VARCHAR(50)   REFERENCES primary_substation(primary_floc),
+
+    project_type           VARCHAR(50),               -- 'Generation', 'Demand', 'Storage'
+    capacity_mva           DECIMAL(10,2),
+    status                 VARCHAR(50),               -- 'Accepted', 'Quoted', 'In Design'
+    expected_connection    DATE,
+
+    updated_at             TIMESTAMP DEFAULT NOW()
+);
+</code></pre>
+
+<h4 id="forecast-tables">Forecast Tables</h4>
+<pre class="codehilite"><code class="language-sql">-- ============================================================
+-- DFES FORECASTS (demand and supply headroom to 2050)
+-- ============================================================
+-- Sources: D20 (DFES Network Scenario Headroom Report)
+CREATE TABLE dfes_forecast (
+    forecast_id            BIGSERIAL     PRIMARY KEY,
+    substation_floc        VARCHAR(50)   NOT NULL,
+    forecast_level         VARCHAR(20)   NOT NULL,     -- 'BSP', 'Primary'
+
+    -- Scenario
+    scenario_name          VARCHAR(100)  NOT NULL,     -- 'Consumer Transformation', 'System Transformation',
+                                                       -- 'Leading the Way', 'Falling Short', 'Holistic Transition'
+    forecast_year          INTEGER       NOT NULL,     -- 2024..2050
+
+    -- Headroom values (from D20)
+    demand_headroom_mw     DECIMAL(10,2),              -- Spare capacity for new demand (positive = available)
+    generation_headroom_mw DECIMAL(10,2),              -- Spare capacity for new generation
+    firm_capacity_mw       DECIMAL(10,2),              -- Firm capacity assumed in this forecast
+    forecast_peak_demand_mw DECIMAL(10,2),             -- Forecast peak demand under this scenario
+    forecast_generation_mw DECIMAL(10,2),              -- Forecast connected generation
+
+    -- Metadata
+    dfes_publication_year  INTEGER,                    -- Year the DFES was published
+    data_source            VARCHAR(50),
+
+    created_at             TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
+-- INFRASTRUCTURE PROJECTS (planned reinforcements)
+-- ============================================================
+-- Sources: D21 (LTDS Infrastructure Projects)
+CREATE TABLE infrastructure_project (
+    project_id             SERIAL        PRIMARY KEY,
+    substation_floc        VARCHAR(50),               -- Primary or BSP FLOC
+    licence_area_id        VARCHAR(10)   REFERENCES licence_area(licence_area_id),
+
+    project_name           VARCHAR(300),
+    project_description    TEXT,
+    capacity_increase_mw   DECIMAL(10,2),
+    planned_start_date     DATE,
+    planned_completion_date DATE,
+    project_status         VARCHAR(50),               -- 'Planned', 'In Progress', 'Completed'
+    investment_driver       VARCHAR(100),              -- 'Load growth', 'Asset replacement', 'Net Zero'
+
+    updated_at             TIMESTAMP DEFAULT NOW()
+);
+</code></pre>
+
+<h4 id="load-profile-reference-table">Load Profile Reference Table</h4>
+<pre class="codehilite"><code class="language-sql">-- ============================================================
+-- STANDARD LOAD PROFILES (reference profiles by customer type)
+-- ============================================================
+-- Sources: D16 (Standard Profiles for Electricity Demand)
+CREATE TABLE standard_load_profile (
+    profile_id             SERIAL        PRIMARY KEY,
+    profile_type           VARCHAR(100)  NOT NULL,     -- 'Domestic', 'Commercial', 'Industrial',
+                                                       -- 'EV Charging', 'Bus Depot', 'Data Centre'
+    profile_year           INTEGER       NOT NULL,
+    half_hour_period       INTEGER       NOT NULL,     -- 1..17520 (48 periods * 365 days)
+    day_of_year            DATE,
+    time_of_day            TIME,
+
+    demand_kw              DECIMAL(10,4),              -- Normalised demand (kW per unit)
+
+    created_at             TIMESTAMP DEFAULT NOW()
+);
+</code></pre>
+
+<h4 id="operational-faults-table">Operational / Faults Table</h4>
+<pre class="codehilite"><code class="language-sql">-- ============================================================
+-- NETWORK FAULTS (outage history)
+-- ============================================================
+-- Sources: D22 (Live Faults)
+CREATE TABLE network_fault (
+    fault_id               SERIAL        PRIMARY KEY,
+    licence_area_id        VARCHAR(10)   REFERENCES licence_area(licence_area_id),
+
+    fault_type             VARCHAR(50),               -- 'Planned', 'Unplanned'
+    voltage_level          VARCHAR(20),
+    affected_area          TEXT,
+    postcode               VARCHAR(10),
+    customers_affected     INTEGER,
+
+    start_timestamp        TIMESTAMP,
+    estimated_restoration  TIMESTAMP,
+    actual_restoration     TIMESTAMP,
+
+    data_source            VARCHAR(50),
+    created_at             TIMESTAMP DEFAULT NOW()
+);
+</code></pre>
+
+<hr />
+<h2 id="5-dataset-to-table-mapping">5. Dataset-to-Table Mapping</h2>
+<p>This table shows exactly which UKPN dataset populates which database table:</p>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Dataset ID</th>
+<th>Target Table(s)</th>
+<th>Join Key</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D1: GSP Overview</td>
+<td><code>ukpn-grid-supply-points-overview</code></td>
+<td><code>grid_supply_point</code></td>
+<td><code>gsp_floc</code></td>
+</tr>
+<tr>
+<td>D2: GSP Distribution Areas</td>
+<td><code>ukpn-grid-supply-points</code></td>
+<td><code>grid_supply_point.boundary_geojson</code></td>
+<td><code>gsp_floc</code></td>
+</tr>
+<tr>
+<td>D3: Primary Distribution Areas</td>
+<td><code>ukpn_primary_postcode_area</code></td>
+<td><code>primary_substation</code></td>
+<td><code>primary_floc</code></td>
+</tr>
+<tr>
+<td>D4: Secondary Sites</td>
+<td><code>ukpn-secondary-sites</code></td>
+<td><code>secondary_substation</code></td>
+<td><code>secondary_floc</code></td>
+</tr>
+<tr>
+<td>D5: Secondary Site Transformers</td>
+<td><code>ukpn-secondary-site-transformers</code></td>
+<td><code>transformer</code> (level='Secondary')</td>
+<td><code>secondary_floc</code></td>
+</tr>
+<tr>
+<td>D6: Secondary Distribution Areas</td>
+<td><code>ukpn_secondary_postcode_area</code></td>
+<td><code>secondary_substation.boundary_geojson</code></td>
+<td><code>secondary_floc</code></td>
+</tr>
+<tr>
+<td>D7: LTDS Table 2a</td>
+<td><code>ltds-table-2a</code></td>
+<td><code>transformer</code> (level='GSP','Primary')</td>
+<td><code>substation_floc</code></td>
+</tr>
+<tr>
+<td>D8: LTDS Table 4</td>
+<td>(LTDS)</td>
+<td><code>transformer.fault_level_ka</code></td>
+<td><code>substation_floc</code></td>
+</tr>
+<tr>
+<td>D9: EPR Data</td>
+<td><code>grid-and-primary-sites-epr-data</code></td>
+<td><code>transformer</code> (EPR fields)</td>
+<td><code>substation_floc</code></td>
+</tr>
+<tr>
+<td>D10: LTDS Table 3a</td>
+<td><code>ltds-table-3a-load-data-observed</code></td>
+<td><code>demand_observation</code> (annual peak)</td>
+<td><code>substation_floc</code></td>
+</tr>
+<tr>
+<td>D11: LTDS Table 3b</td>
+<td>(LTDS)</td>
+<td><code>demand_observation</code> (true peak)</td>
+<td><code>substation_floc</code></td>
+</tr>
+<tr>
+<td>D12: Grid Transformer Power Flow</td>
+<td><code>ukpn-grid-transformer-operational-data-half-hourly</code></td>
+<td><code>demand_observation</code>, <code>supply_observation</code></td>
+<td><code>gsp_floc</code></td>
+</tr>
+<tr>
+<td>D13: Smart Meter -- Substation</td>
+<td><code>ukpn-smart-meter-consumption-substation</code></td>
+<td><code>demand_observation</code></td>
+<td><code>secondary_floc</code></td>
+</tr>
+<tr>
+<td>D14: Smart Meter -- LV Feeder</td>
+<td><code>ukpn-smart-meter-consumption-lv-feeder</code></td>
+<td><code>demand_observation</code>, <code>lv_feeder</code></td>
+<td><code>feeder_id</code></td>
+</tr>
+<tr>
+<td>D15: Secondary Utilisation</td>
+<td><code>ukpn-secondary-site-utilisation</code></td>
+<td><code>secondary_substation</code></td>
+<td><code>secondary_floc</code></td>
+</tr>
+<tr>
+<td>D16: Standard Load Profiles</td>
+<td><code>ukpn-standard-profiles-electricity-demand</code></td>
+<td><code>standard_load_profile</code></td>
+<td>--</td>
+</tr>
+<tr>
+<td>D17: Embedded Capacity Register</td>
+<td><code>ukpn-embedded-capacity-register</code></td>
+<td><code>embedded_capacity_register</code></td>
+<td><code>primary_floc</code></td>
+</tr>
+<tr>
+<td>D18: Large Demand List</td>
+<td><code>ukpn-large-demand-list</code></td>
+<td><code>connection_queue</code></td>
+<td><code>gsp_floc</code></td>
+</tr>
+<tr>
+<td>D19: GSP Project Status</td>
+<td><code>ukpn-gsp-project-status</code></td>
+<td><code>connection_queue</code></td>
+<td><code>gsp_floc</code></td>
+</tr>
+<tr>
+<td>D20: DFES Headroom Report</td>
+<td><code>dfes-network-headroom-report</code></td>
+<td><code>dfes_forecast</code></td>
+<td><code>substation_floc</code></td>
+</tr>
+<tr>
+<td>D21: LTDS Infrastructure Projects</td>
+<td><code>ukpn-ltds-infrastructure-projects</code></td>
+<td><code>infrastructure_project</code></td>
+<td><code>substation_floc</code></td>
+</tr>
+<tr>
+<td>D22: Live Faults</td>
+<td><code>ukpn-live-faults</code></td>
+<td><code>network_fault</code></td>
+<td><code>licence_area_id</code></td>
+</tr>
+<tr>
+<td>D23: Network Statistics</td>
+<td><code>ukpn-network-statistics</code></td>
+<td>(reference / dashboard)</td>
+<td><code>licence_area_id</code></td>
+</tr>
+<tr>
+<td>D24: Data Centre Utilisation</td>
+<td><code>ukpn-data-centre-utilisation</code></td>
+<td>(reference / dashboard)</td>
+<td>--</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-key-relationships-join-paths">6. Key Relationships &amp; Join Paths</h2>
+<h3 id="61-navigating-the-hierarchy-top-down">6.1 Navigating the hierarchy (top-down)</h3>
+<pre class="codehilite"><code class="language-sql">-- From GSP down to secondary substations
+SELECT
+    g.gsp_name,
+    b.bsp_name,
+    p.primary_name,
+    p.firm_capacity_mw,
+    s.secondary_name,
+    s.onan_rating_kva,
+    s.customer_count
+FROM grid_supply_point g
+JOIN bulk_supply_point b    ON b.gsp_floc     = g.gsp_floc
+JOIN primary_substation p   ON p.bsp_floc     = b.bsp_floc
+JOIN secondary_substation s ON s.primary_floc = p.primary_floc
+WHERE g.licence_area_id = 'LPN';   -- London
+</code></pre>
+
+<h3 id="62-current-demand-at-a-primary-substation">6.2 Current demand at a primary substation</h3>
+<pre class="codehilite"><code class="language-sql">-- Latest observed peak demand + utilisation
+SELECT
+    p.primary_name,
+    p.firm_capacity_mw,
+    d.active_power_mw    AS observed_peak_mw,
+    d.peak_season,
+    (d.active_power_mw / p.firm_capacity_mw * 100) AS utilisation_pct
+FROM primary_substation p
+JOIN demand_observation d ON d.substation_floc = p.primary_floc
+WHERE d.is_observed_peak = TRUE
+  AND d.granularity = 'Annual_Peak'
+ORDER BY utilisation_pct DESC;
+</code></pre>
+
+<h3 id="63-embedded-generation-at-a-primary-substation">6.3 Embedded generation at a primary substation</h3>
+<pre class="codehilite"><code class="language-sql">-- Total connected generation capacity by energy source
+SELECT
+    p.primary_name,
+    e.energy_source,
+    COUNT(*)                    AS site_count,
+    SUM(e.export_capacity_mw)  AS total_export_mw
+FROM primary_substation p
+JOIN embedded_capacity_register e ON e.primary_floc = p.primary_floc
+WHERE e.connection_status = 'Connected'
+GROUP BY p.primary_name, e.energy_source
+ORDER BY total_export_mw DESC;
+</code></pre>
+
+<h3 id="64-forecast-headroom-to-2050">6.4 Forecast headroom to 2050</h3>
+<pre class="codehilite"><code class="language-sql">-- Which primary substations will be constrained by 2030?
+SELECT
+    p.primary_name,
+    f.scenario_name,
+    f.forecast_year,
+    f.demand_headroom_mw,
+    f.generation_headroom_mw
+FROM primary_substation p
+JOIN dfes_forecast f ON f.substation_floc = p.primary_floc
+WHERE f.forecast_year = 2030
+  AND f.demand_headroom_mw &lt; 0    -- Negative headroom = constraint
+ORDER BY f.demand_headroom_mw ASC;
+</code></pre>
+
+<h3 id="65-supply-vs-demand-at-a-gsp-half-hourly">6.5 Supply vs demand at a GSP (half-hourly)</h3>
+<pre class="codehilite"><code class="language-sql">-- Half-hourly net power flow at a GSP (positive = exporting to grid)
+SELECT
+    g.gsp_name,
+    d.observation_timestamp,
+    d.active_power_mw,
+    s.net_export_mw,
+    s.generation_estimate_mw
+FROM grid_supply_point g
+JOIN demand_observation d  ON d.substation_floc = g.gsp_floc
+LEFT JOIN supply_observation s ON s.substation_floc = g.gsp_floc
+                              AND s.observation_timestamp = d.observation_timestamp
+WHERE d.granularity = 'Half_Hourly'
+  AND d.observation_timestamp BETWEEN '2024-01-01' AND '2024-01-02'
+ORDER BY d.observation_timestamp;
+</code></pre>
+
+<hr />
+<h2 id="7-expected-outputs">7. Expected Outputs</h2>
+<p>With this schema fully populated, you can produce the following analyses:</p>
+<h3 id="71-current-state">7.1 Current State</h3>
+<table>
+<thead>
+<tr>
+<th>Output</th>
+<th>Description</th>
+<th>Tables Used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Full network topology map</strong></td>
+<td>Interactive GIS map from GSP to secondary substation with supply areas</td>
+<td>All hierarchy tables + <code>boundary_geojson</code> fields</td>
+</tr>
+<tr>
+<td><strong>Capacity utilisation dashboard</strong></td>
+<td>RAG status at every level showing how close each node is to its firm capacity</td>
+<td><code>primary_substation</code>, <code>secondary_substation</code>, <code>demand_observation</code></td>
+</tr>
+<tr>
+<td><strong>Demand heatmap</strong></td>
+<td>Geographic heatmap of current peak demand overlaid on substation distribution areas</td>
+<td><code>primary_substation</code>, <code>demand_observation</code>, <code>boundary_geojson</code></td>
+</tr>
+<tr>
+<td><strong>Embedded generation register</strong></td>
+<td>Map of all connected DER by technology type and capacity</td>
+<td><code>embedded_capacity_register</code>, <code>primary_substation</code></td>
+</tr>
+<tr>
+<td><strong>Half-hourly load curves</strong></td>
+<td>Time-series demand profiles at GSP, substation, and feeder level</td>
+<td><code>demand_observation</code></td>
+</tr>
+<tr>
+<td><strong>Net import/export analysis</strong></td>
+<td>Which GSPs are net exporters (embedded generation exceeds demand)</td>
+<td><code>demand_observation</code>, <code>supply_observation</code></td>
+</tr>
+<tr>
+<td><strong>Connection queue analysis</strong></td>
+<td>Volume and capacity of projects awaiting connection at each GSP</td>
+<td><code>connection_queue</code>, <code>grid_supply_point</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="72-forecast">7.2 Forecast</h3>
+<table>
+<thead>
+<tr>
+<th>Output</th>
+<th>Description</th>
+<th>Tables Used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Constraint forecast to 2050</strong></td>
+<td>List of substations that will exceed firm capacity under each DFES scenario, and when</td>
+<td><code>dfes_forecast</code>, <code>primary_substation</code>, <code>bulk_supply_point</code></td>
+</tr>
+<tr>
+<td><strong>Reinforcement pipeline</strong></td>
+<td>Planned infrastructure projects mapped to constrained substations</td>
+<td><code>infrastructure_project</code>, <code>dfes_forecast</code></td>
+</tr>
+<tr>
+<td><strong>EV / heat pump impact</strong></td>
+<td>Forecast demand growth from electrification overlaid on available headroom</td>
+<td><code>dfes_forecast</code>, <code>standard_load_profile</code></td>
+</tr>
+<tr>
+<td><strong>Generation growth forecast</strong></td>
+<td>Projected growth in embedded generation by technology and location</td>
+<td><code>dfes_forecast</code>, <code>embedded_capacity_register</code></td>
+</tr>
+<tr>
+<td><strong>Investment prioritisation</strong></td>
+<td>Rank substations by severity and timing of constraint for capital planning</td>
+<td><code>dfes_forecast</code>, <code>infrastructure_project</code>, <code>primary_substation</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="73-cross-dno-future-extensibility">7.3 Cross-DNO (future extensibility)</h3>
+<table>
+<thead>
+<tr>
+<th>Output</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>National constraint map</strong></td>
+<td>Aggregate constraint data across all DNOs using the standardised schema</td>
+</tr>
+<tr>
+<td><strong>Technology deployment comparison</strong></td>
+<td>Compare EV, heat pump, solar uptake rates across DNO regions</td>
+</tr>
+<tr>
+<td><strong>Connection queue national view</strong></td>
+<td>Total pipeline of generation and demand connections nationally</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-extensibility-for-other-dnos">8. Extensibility for Other DNOs</h2>
+<p>The schema is designed to be <strong>DNO-agnostic</strong>. To onboard a new DNO:</p>
+<ol>
+<li><strong>Add a row to <code>licence_area</code></strong> for each of the DNO's licence areas</li>
+<li><strong>Map the DNO's field names</strong> to the schema columns (a mapping table or ETL config per DNO)</li>
+<li><strong>Populate the hierarchy tables</strong> -- every DNO publishes LTDS data covering GSP, BSP, and Primary substations</li>
+<li><strong>Ingest the Embedded Capacity Register</strong> -- mandated format is consistent across all DNOs</li>
+<li><strong>Load DFES forecasts</strong> -- scenario names and granularity vary slightly but the structure is consistent</li>
+</ol>
+<p>Key differences between DNOs that the schema accommodates:
+- <strong>FLOC format</strong> varies (UKPN uses SAP FLOCs; others use different ID schemes). The <code>VARCHAR(50)</code> primary key is flexible enough for any format.
+- <strong>Data granularity</strong> varies (some DNOs lack half-hourly substation data). The <code>granularity</code> field in observation tables handles this.
+- <strong>Secondary substation data</strong> is sparse for non-UKPN DNOs. Secondary tables can be partially populated.
+- <strong>DFES scenario names</strong> vary by DNO. The <code>scenario_name</code> field is free-text to accommodate this.</p>
+<hr />
+<h2 id="9-data-access-ingestion">9. Data Access &amp; Ingestion</h2>
+<h3 id="ukpn-opendatasoft-api">UKPN OpenDataSoft API</h3>
+<p>Base URL: <code>https://ukpowernetworks.opendatasoft.com/api/explore/v2.1/</code></p>
+<p>Example API calls:</p>
+<pre class="codehilite"><code class="language-bash"># List all datasets
+curl &quot;https://ukpowernetworks.opendatasoft.com/api/explore/v2.1/catalog/datasets&quot;
+
+# Get GSP overview data as JSON
+curl &quot;https://ukpowernetworks.opendatasoft.com/api/explore/v2.1/catalog/datasets/ukpn-grid-supply-points-overview/records?limit=100&quot;
+
+# Get primary substation areas as GeoJSON
+curl &quot;https://ukpowernetworks.opendatasoft.com/api/explore/v2.1/catalog/datasets/ukpn_primary_postcode_area/exports/geojson&quot;
+
+# Get half-hourly grid transformer data for a date range
+curl &quot;https://ukpowernetworks.opendatasoft.com/api/explore/v2.1/catalog/datasets/ukpn-grid-transformer-operational-data-half-hourly/records?where=date_time&gt;='2024-01-01'&amp;limit=100&quot;
+
+# Export embedded capacity register as CSV
+curl &quot;https://ukpowernetworks.opendatasoft.com/api/explore/v2.1/catalog/datasets/ukpn-embedded-capacity-register/exports/csv&quot;
+</code></pre>
+
+<p>Free registration is required for API access. Rate limits apply.</p>
+<h3 id="recommended-ingestion-order">Recommended Ingestion Order</h3>
+<ol>
+<li><code>licence_area</code> (manual)</li>
+<li><code>grid_supply_point</code> (D1 + D2)</li>
+<li><code>bulk_supply_point</code> (from LTDS/DFES)</li>
+<li><code>primary_substation</code> (D3)</li>
+<li><code>secondary_substation</code> (D4 + D5 + D6 + D15)</li>
+<li><code>lv_feeder</code> (D14)</li>
+<li><code>transformer</code> (D7 + D5 + D9)</li>
+<li><code>embedded_capacity_register</code> (D17)</li>
+<li><code>connection_queue</code> (D18 + D19)</li>
+<li><code>demand_observation</code> (D10 + D11 + D12 + D13 + D14)</li>
+<li><code>supply_observation</code> (derived from D12)</li>
+<li><code>dfes_forecast</code> (D20)</li>
+<li><code>infrastructure_project</code> (D21)</li>
+<li><code>standard_load_profile</code> (D16)</li>
+<li><code>network_fault</code> (D22)</li>
+</ol>
+<hr />
+<h2 id="10-technology-recommendations">10. Technology Recommendations</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Recommendation</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Database</strong></td>
+<td>PostgreSQL + PostGIS</td>
+<td>Native geospatial support (GeoJSON, spatial queries), time-series partitioning, JSONB for flexible fields</td>
+</tr>
+<tr>
+<td><strong>Ingestion</strong></td>
+<td>Python (pandas + requests)</td>
+<td>Simple API/CSV ingestion; psycopg2 for PostgreSQL loading</td>
+</tr>
+<tr>
+<td><strong>Scheduling</strong></td>
+<td>cron / Apache Airflow</td>
+<td>Periodic refresh of half-hourly data and monthly ECR updates</td>
+</tr>
+<tr>
+<td><strong>Visualisation</strong></td>
+<td>QGIS / Kepler.gl / Grafana</td>
+<td>GIS mapping, time-series dashboards</td>
+</tr>
+<tr>
+<td><strong>API layer</strong></td>
+<td>FastAPI / PostgREST</td>
+<td>Expose the database as a REST API for downstream applications</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
